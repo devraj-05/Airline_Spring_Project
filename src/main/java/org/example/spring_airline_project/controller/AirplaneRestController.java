@@ -57,9 +57,12 @@ public class AirplaneRestController {
             throw new RuntimeException("Airplane not found : " + id);
         }
         airplaneService.deleteById(id);
+        System.out.println("User Deleted Airplane : !");
         return "Deleted Airplane id : " + id ;
 
+
     }
+
 
 }
 
