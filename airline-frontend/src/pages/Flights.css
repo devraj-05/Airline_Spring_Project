@@ -1,0 +1,70 @@
+.flights-page {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  
+  .flights-page h1 {
+    color: #1a3a6a;
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  
+  .search-container {
+    margin-bottom: 30px;
+    text-align: center;
+  }
+  
+  .search-input {
+    width: 100%;
+    max-width: 600px;
+    padding: 12px 20px;
+    font-size: 16px;
+    border: 1px solid #ddd;
+    border-radius: 30px;
+  }
+  
+  .flights-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  .flights-table th,
+  .flights-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+  }
+  
+  .flights-table th {
+    background-color: #1a3a6a;
+    color: white;
+  }
+  
+  .flights-table tr:nth-child(even) {
+    background-color: #f5f5f5;
+  }
+  
+  .flights-table tr:hover {
+    background-color: #ebf5ff;
+  }
+  
+  .status {
+    font-weight: bold;
+  }
+  
+  .status.on-time {
+    color: green;
+  }
+  
+  .status.delayed {
+    color: red;
+  }
+  
+  .status.boarding {
+    color: blue;
+  }
+  
+  tr.delayed {
+    background-color: #fff2f2;
+  }
+  

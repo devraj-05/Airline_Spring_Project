@@ -1,0 +1,46 @@
+.home-page {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  
+  .hero-section {
+    position: relative;
+    text-align: center;
+    margin-bottom: 40px;
+  }
+  
+  .airport-image {
+    width: 100%;
+    height: 400px;
+    object-fit: cover;
+    border-radius: 8px;
+  }
+  
+  .hero-section h1 {
+    position: absolute;
+    bottom: 20px;
+    left: 0;
+    right: 0;
+    color: white;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+    font-size: 2.5rem;
+    margin: 0;
+  }
+  
+  .about-section {
+    background-color: #f8f8f8;
+    padding: 30px;
+    border-radius: 8px;
+  }
+  
+  .about-section h2 {
+    color: #1a3a6a;
+    border-bottom: 2px solid #66c2ff;
+    padding-bottom: 10px;
+    margin-top: 0;
+  }
+  
+  .about-section p {
+    line-height: 1.6;
+    margin-bottom: 15px;
+  }
