@@ -1,41 +1,29 @@
 // App.jsx
 // Save in: src/App.jsx
-import { useState } from 'react';
 import './App.css';
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
 import Airplanes from './pages/Airplanes';
 import Flights from './pages/Flights';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
 function App() {
-  const [activePage, setActivePage] = useState('home');
   const airportName = "Skyline International Airport";
-
-  const renderPage = () => {
-    switch(activePage) {
-      case 'home':
-        return <Home airportName={airportName} />;
-      case 'airplanes':
-        return <Airplanes />;
-      case 'flights':
-        return <Flights />;
-      default:
-        return <Home airportName={airportName} />;
-    }
-  };
-
   return (
-    <div className="app">
-      <Navbar 
-        airportName={airportName} 
-        activePage={activePage} 
-        setActivePage={setActivePage} 
-      />
-      <main className="main-content">
-        {renderPage()}
-      </main>
-    </div>
+    <BrowserRouter>
+      <div className="App">
+        <Navbar airportName={airportName} />
+        <main className="content">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/airplanes" element={<Airplanes />} />
+            <Route path="/flights" element={<Flights />} />
+          </Routes>
+        </main>
+      </div>
+    </BrowserRouter>
   );
-}
+  
+};
 
 export default App;

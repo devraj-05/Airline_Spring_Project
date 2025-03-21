@@ -8,7 +8,7 @@ function Home({ airportName }) {
     <div className="home-page">
       <div className="hero-section">
         <img src={airportImage} alt="Airport" className="airport-image" />
-        <h1>Welcome to {airportName}</h1>
+        <h1>Welcome to Skyline International Airport{airportName}</h1>
       </div>
       
       <section className="about-section">
