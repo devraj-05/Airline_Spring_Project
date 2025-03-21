@@ -14,7 +14,7 @@ function Flights() {
   // Form state
   const [flightData, setFlightData] = useState({
     f_id: 0,
-    a_id: { id: '' },
+    a_id: { a_id: '' },
     dept_city: '',
     dest_city: '',
     flight_date: currentDate,
@@ -53,7 +53,6 @@ function Flights() {
       }
       
       const data = await response.json();
-      console.log('Airplane data:', data); // For debugging
       setAirplanes(data);
     } catch (error) {
       console.error('Error fetching airplanes:', error);
@@ -70,10 +69,42 @@ function Flights() {
     const { name, value } = e.target;
     
     if (name === 'a_id') {
-      // Updated to use a_id instead of id
       setFlightData({ ...flightData, a_id: { a_id: value } });
     } else {
       setFlightData({ ...flightData, [name]: value });
+    }
+  };
+
+  // Format time for java.sql.Time (HH:MM:SS)
+  const formatTimeForJava = (timeString) => {
+    if (!timeString) return null;
+    return `${timeString}:00`;
+  };
+
+  // Format time string from backend for display
+  const formatTimeForDisplay = (timeString) => {
+    if (!timeString) return 'N/A';
+    
+    // Check if timeString is in the format "HH:MM:SS"
+    if (/^\d{2}:\d{2}:\d{2}$/.test(timeString)) {
+      return timeString.substring(0, 5); // Return HH:MM
+    }
+    
+    try {
+      // For date objects or ISO strings
+      const date = new Date(`1970-01-01T${timeString}`);
+      if (isNaN(date.getTime())) {
+        // If still invalid, try parsing the time portion
+        const timeParts = timeString.split(':');
+        if (timeParts.length >= 2) {
+          return `${timeParts[0].padStart(2, '0')}:${timeParts[1].padStart(2, '0')}`;
+        }
+        return 'Invalid Time';
+      }
+      return date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    } catch (e) {
+      console.error('Error formatting time:', e);
+      return 'Invalid Time';
     }
   };
 
@@ -82,6 +113,13 @@ function Flights() {
     e.preventDefault();
     
     try {
+      // Create a copy of the flight data for submission
+      const submissionData = { ...flightData };
+      
+      // Format times for java.sql.Time
+      submissionData.dept_time = formatTimeForJava(submissionData.dept_time);
+      submissionData.dest_time = formatTimeForJava(submissionData.dest_time);
+      
       // Determine if this is an update or a new flight
       const url = '/api/flights';
       const method = editMode ? 'PUT' : 'POST';
@@ -91,10 +129,12 @@ function Flights() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(flightData),
+        body: JSON.stringify(submissionData),
       });
       
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Server error response:', errorText);
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
       
@@ -110,29 +150,55 @@ function Flights() {
 
   // Handle edit button click
   const handleEdit = (flight) => {
-    // Convert database time format to input time format (HH:MM)
-    const formatTime = (timeString) => {
+    // Extract time from time string (could be in various formats)
+    const extractTime = (timeString) => {
       if (!timeString) return '';
-      const date = new Date(timeString);
-      return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+      
+      // If it's already in HH:MM or HH:MM:SS format
+      if (typeof timeString === 'string' && /^\d{1,2}:\d{1,2}(:\d{1,2})?$/.test(timeString)) {
+        return timeString.substring(0, 5); // Return just HH:MM
+      }
+      
+      try {
+        // Try parsing as a date
+        const date = new Date(`1970-01-01T${timeString}`);
+        if (!isNaN(date.getTime())) {
+          return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+        }
+        
+        // If the above fails, try extracting from the time string
+        const timeParts = timeString.toString().split(':');
+        if (timeParts.length >= 2) {
+          return `${timeParts[0].padStart(2, '0')}:${timeParts[1].padStart(2, '0')}`;
+        }
+        
+        return '';
+      } catch (e) {
+        console.error('Error extracting time:', e);
+        return '';
+      }
     };
 
     // Format date for the form
     const formatDate = (dateString) => {
       if (!dateString) return currentDate;
-      const date = new Date(dateString);
-      return date.toISOString().split('T')[0];
+      try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return currentDate;
+        return date.toISOString().split('T')[0];
+      } catch (e) {
+        return currentDate;
+      }
     };
 
-    // Updated to use a_id instead of id
     setFlightData({
       f_id: flight.f_id,
       a_id: { a_id: flight.a_id?.a_id || '' },
       dept_city: flight.dept_city || '',
       dest_city: flight.dest_city || '',
       flight_date: formatDate(flight.flight_date),
-      dept_time: formatTime(flight.dept_time),
-      dest_time: formatTime(flight.dest_time),
+      dept_time: extractTime(flight.dept_time),
+      dest_time: extractTime(flight.dest_time),
       price: flight.price || ''
     });
     
@@ -165,7 +231,7 @@ function Flights() {
   const resetForm = () => {
     setFlightData({
       f_id: 0,
-      a_id: { a_id: '' }, // Updated to use a_id instead of id
+      a_id: { a_id: '' },
       dept_city: '',
       dest_city: '',
       flight_date: currentDate,
@@ -176,12 +242,23 @@ function Flights() {
     setEditMode(false);
   };
 
-  // Filter flights based on search term - updated to match your data structure
-  const filteredFlights = flights.filter(flight => 
-    (flight.dest_city && flight.dest_city.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (flight.dept_city && flight.dept_city.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (flight.a_id && flight.a_id.name && flight.a_id.name.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  // Filter flights based on search term - FIXED FUNCTION for city search only
+  const filteredFlights = flights.filter(flight => {
+    const searchTermLower = searchTerm.toLowerCase().trim();
+    
+    // If search term is empty, return all flights
+    if (!searchTermLower) return true;
+    
+    // Check destination city
+    const destCityMatch = flight.dest_city && 
+      flight.dest_city.toLowerCase().includes(searchTermLower);
+    
+    // Check departure city
+    const deptCityMatch = flight.dept_city && 
+      flight.dept_city.toLowerCase().includes(searchTermLower);
+    
+    return destCityMatch || deptCityMatch;
+  });
 
   // Display loading state
   if (loading && flights.length === 0) {
@@ -203,6 +280,16 @@ function Flights() {
     );
   }
 
+  // Find the matching airplane info for display
+  const getAirplaneInfo = (airplaneId) => {
+    if (!airplaneId || !airplaneId.a_id) return 'N/A';
+    const airplane = airplanes.find(a => a.a_id.toString() === airplaneId.a_id.toString());
+    if (airplane) {
+      return `${airplane.name || 'Unknown'} - Capacity: ${airplane.capacity || 'N/A'}`;
+    }
+    return `ID: ${airplaneId.a_id}`;
+  };
+
   return (
     <div className="flights-page">
       <h1>Flight Information</h1>
@@ -210,7 +297,7 @@ function Flights() {
       <div className="search-container">
         <input
           type="text"
-          placeholder="Search by destination, departure city, or airline"
+          placeholder="Search by destination or departure city"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="search-input"
@@ -245,7 +332,7 @@ function Flights() {
                 <option value="">Select an airplane</option>
                 {airplanes.map(airplane => (
                   <option key={airplane.a_id} value={airplane.a_id}>
-                    {airplane.name} - Capacity: {airplane.capacity}
+                    {airplane.name ? `${airplane.name} - Capacity: ${airplane.capacity}` : `ID: ${airplane.a_id}`}
                   </option>
                 ))}
               </select>
@@ -346,7 +433,7 @@ function Flights() {
       
       <div className="flights-container">
         {filteredFlights.length === 0 ? (
-          <p>No flights available.</p>
+          <p>No flights available matching your search.</p>
         ) : (
           <table className="flights-table">
             <thead>
@@ -366,12 +453,12 @@ function Flights() {
               {filteredFlights.map(flight => (
                 <tr key={flight.f_id}>
                   <td>{flight.f_id}</td>
-                  <td>{flight.a_id ? `${flight.a_id.name} - Capacity: ${flight.a_id.capacity}` : 'N/A'}</td>
+                  <td>{getAirplaneInfo(flight.a_id)}</td>
                   <td>{flight.dept_city}</td>
                   <td>{flight.dest_city}</td>
                   <td>{new Date(flight.flight_date).toLocaleDateString()}</td>
-                  <td>{new Date(flight.dept_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td>
-                  <td>{new Date(flight.dest_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td>
+                  <td>{formatTimeForDisplay(flight.dept_time)}</td>
+                  <td>{formatTimeForDisplay(flight.dest_time)}</td>
                   <td>${parseFloat(flight.price).toFixed(2)}</td>
                   <td>
                     <div className="action-buttons">
